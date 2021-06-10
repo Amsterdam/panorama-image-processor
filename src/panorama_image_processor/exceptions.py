@@ -1,0 +1,2 @@
+class DatastoreConfigException(Exception):
+    pass

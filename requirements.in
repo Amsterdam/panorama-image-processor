@@ -1,0 +1,14 @@
+azure-storage-blob
+azure-storage-queue
+matplotlib
+numpy
+opencv-python
+pandas
+pillow
+PyYAML
+requests
+scipy
+seaborn
+torch
+torchvision
+tqdm

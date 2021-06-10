@@ -1,0 +1,15 @@
+# Base dependecies
+-r ./requirements.txt
+
+# Tools for maintaining requirements.txt:
+pip-tools
+
+# Test Libraries
+coverage
+flake8
+pytest
+pytest-cov
+tox
+
+# Useful extra developer packages:
+isort
