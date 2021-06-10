@@ -11,7 +11,6 @@ from panorama_image_processor.config import PANORAMA_RAW_PATH
 class AzureStorageDatastore(Datastore):
 
     def __init__(self, connection_config={}):
-        print(connection_config)
         assert connection_config.get('connection_string') is not None, \
             "An Azure Storage connection string is required to use the AzureStorageDatastore"
         self._connection_string = connection_config.get('connection_string')

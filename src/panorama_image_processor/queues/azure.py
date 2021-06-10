@@ -43,12 +43,9 @@ class AzureStorageQueue(BaseQueue):
         :return: The message itself and the separate job_info (contents) of the message.
         """
         pages = self.queue.receive_messages(messages_per_page=1).by_page()
-        print(pages)
         try:
             page = next(pages)
-            print(page)
             message = next(page)
-            print(message)
             # Job information is stored in message.content
             job_info = json.loads(message.content)
             return message, job_info
