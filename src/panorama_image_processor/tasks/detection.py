@@ -1,4 +1,5 @@
 import os
+import pkgutil
 import sys
 
 import torch
@@ -20,7 +21,7 @@ class DetectionTask(BaseTask):
 
     def __init__(self, panorama_filename):
         # Add detection model path to the sys path, to be able to load the model
-        sys.path.append(DETECTION_BASE_PATH)
+        sys.path.append(str(DETECTION_BASE_PATH))
         self.model = attempt_load(os.path.join(DETECTION_BASE_PATH, DETECTION_MODEL))
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')

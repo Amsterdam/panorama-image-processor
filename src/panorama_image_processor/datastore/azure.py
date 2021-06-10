@@ -5,6 +5,7 @@ import re
 from azure.storage.blob import BlobServiceClient
 
 from .base import Datastore
+from panorama_image_processor.config import PANORAMA_RAW_PATH
 
 
 class AzureStorageDatastore(Datastore):
@@ -14,7 +15,6 @@ class AzureStorageDatastore(Datastore):
         assert connection_config.get('connection_string') is not None, \
             "An Azure Storage connection string is required to use the AzureStorageDatastore"
         self._connection_string = connection_config.get('connection_string')
-        self._panorama_raw_path = connection_config.get('PANORAMA_RAW_PATH')
 
         self._service_client = self.connect()
 
@@ -30,10 +30,10 @@ class AzureStorageDatastore(Datastore):
         container_client = self._service_client.get_container_client(container_name)
         blob_client = container_client.get_blob_client(path + filename)
 
-        panorama_local_path = f"{self._panorama_raw_path}/{full_path}"
-        Path(panorama_local_path).mkdir(parents=True, exist_ok=True)
+        panorama_local_path = Path(PANORAMA_RAW_PATH) / full_path
+        panorama_local_path.mkdir(parents=True, exist_ok=True)
 
-        panorama_filename = panorama_local_path + filename
+        panorama_filename = panorama_local_path / filename
 
         with open(panorama_filename, "wb") as file:
             download_stream = blob_client.download_blob()

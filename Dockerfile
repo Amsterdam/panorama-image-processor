@@ -65,12 +65,18 @@ RUN chmod -R a+r /install
 
 WORKDIR /app
 
+RUN mkdir -p images && chown datapunt images
+
 COPY src ./src
 COPY setup.py setup.cfg .
 
 RUN pip install .
 
 USER datapunt
+
+# Any process that requires to write in the home dir
+# we write to /tmp since we have no home dir
+ENV HOME /tmp
 
 # Start the worker
 CMD ["worker"]

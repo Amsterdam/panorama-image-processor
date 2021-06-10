@@ -2,9 +2,7 @@ import json
 import os
 import uuid
 
-from azure.storage.queue import (
-        QueueClient
-)
+from azure.storage.queue import QueueClient
 
 from .base import BaseQueue, EmptyQueueException
 from panorama_image_processor.config import AZURE_STORAGE_CONNECTION_STRING
