@@ -68,7 +68,7 @@ WORKDIR /app
 RUN mkdir -p images && chown datapunt images
 
 COPY src ./src
-COPY setup.py setup.cfg .
+COPY setup.py .
 
 RUN pip install .
 
