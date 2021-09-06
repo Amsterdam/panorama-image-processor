@@ -1,3 +1,5 @@
+import os
+import shutil
 from enum import Enum
 from pathlib import Path
 from PIL import Image
@@ -23,6 +25,7 @@ class PanoramaStatus(Enum):
     BLURRED = "blurred"
     PACKAGED = "packaged"
     DISTRIBUTED = "distributed"
+    CLEANEDUP = 'cleanedup'
     DONE = "done"
     FAILED = "failed"
 
@@ -56,7 +59,8 @@ class PanoramaJob(object):
             PanoramaStatus.DETECTED: self._blur_regions,
             PanoramaStatus.BLURRED: self._package_projections,
             PanoramaStatus.PACKAGED: self._distribute,
-            PanoramaStatus.DISTRIBUTED: self._finish_job,
+            PanoramaStatus.DISTRIBUTED: self._cleanup,
+            PanoramaStatus.CLEANEDUP: self._finish_job,
         }
 
     @property
@@ -141,8 +145,14 @@ class PanoramaJob(object):
                                            destination=self.panorama_path, source_base=PANORAMA_PROCESSED_PATH)
         self.status = PanoramaStatus.DISTRIBUTED
 
+    def _cleanup(self):
+        print("Cleaning up files")
+        os.remove(self.raw_filename)
+        os.remove(self.intermediate_filename)
+        shutil.rmtree(self.processed_path)
+        self.status = PanoramaStatus.CLEANEDUP
+
     def _finish_job(self):
         print("Job finished")
         self.status = PanoramaStatus.DONE
         self._is_running = False
-
