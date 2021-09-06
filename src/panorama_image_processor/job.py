@@ -147,9 +147,12 @@ class PanoramaJob(object):
 
     def _cleanup(self):
         print("Cleaning up files")
-        os.remove(self.raw_filename)
-        os.remove(self.intermediate_filename)
-        shutil.rmtree(self.processed_path)
+        try:
+            os.remove(self.raw_filename)
+            os.remove(self.intermediate_filename)
+        except os.error:
+            pass
+        shutil.rmtree(self.processed_path, ignore_errors=True)
         self.status = PanoramaStatus.CLEANEDUP
 
     def _finish_job(self):
