@@ -16,6 +16,7 @@ PANORAMA_INTERMEDIATE_PATH = f"{PANORAMA_BASE_PATH}/intermediate"
 PANORAMA_PROCESSED_PATH = f"{PANORAMA_BASE_PATH}/processed"
 
 AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+AZURE_QUEUE_VISIBILITY = os.getenv('AZURE_QUEUE_VISIBILITY', 60)
 
 PANORAMA_PROCESSING_QUEUE = os.getenv('PANORAMA_PROCESSING_QUEUE', 'panorama-processing-queue')
 PANORAMA_RESULT_QUEUE = os.getenv('PANORAMA_RESULT_QUEUE', 'panorama-result-queue')
@@ -40,3 +41,4 @@ def get_datastore_config(name: str) -> dict:
 
     config['name'] = name
     return config
+

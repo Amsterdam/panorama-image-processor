@@ -5,7 +5,8 @@ import uuid
 from azure.storage.queue import QueueClient
 
 from .base import BaseQueue, EmptyQueueException
-from panorama_image_processor.config import AZURE_STORAGE_CONNECTION_STRING
+from panorama_image_processor.config import AZURE_STORAGE_CONNECTION_STRING, AZURE_QUEUE_VISIBILITY
+
 
 
 class AzureStorageQueue(BaseQueue):
@@ -42,7 +43,8 @@ class AzureStorageQueue(BaseQueue):
         the message once the job is done.
         :return: The message itself and the separate job_info (contents) of the message.
         """
-        pages = self.queue.receive_messages(messages_per_page=1).by_page()
+        pages = self.queue.receive_messages(
+            messages_per_page=1, visibility_timeout=AZURE_QUEUE_VISIBILITY).by_page()
         try:
             page = next(pages)
             message = next(page)
