@@ -54,6 +54,13 @@ RUN apt-get -qq update \
     && apt-get -qq autoremove \
     && apt-get -qq clean
 
+# Add cuda support as stated in https://docs.microsoft.com/en-us/azure/virtual-machines/linux/n-series-driver-setup
+RUN CUDA_REPO_PKG=cuda-repo-ubuntu1604_10.0.130-1_amd64.deb \
+    && wget -O /tmp/${CUDA_REPO_PKG} https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/${CUDA_REPO_PKG} \
+    && dpkg -i /tmp/${CUDA_REPO_PKG} \
+    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub \
+    && rm -f /tmp/${CUDA_REPO_PKG}
+
 RUN adduser --system datapunt
 
 RUN mkdir -p /app && chown datapunt /app
