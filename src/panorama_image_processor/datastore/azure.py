@@ -2,11 +2,14 @@ import os
 from pathlib import Path
 import re
 
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, BlobPrefix
+from azure.core.exceptions import ResourceNotFoundError
+
 
 from .base import Datastore
 from panorama_image_processor.config import PANORAMA_RAW_PATH
 
+DEFAULT_FIELD_NAMES = ['name']
 
 class AzureStorageDatastore(Datastore):
 
@@ -38,6 +41,13 @@ class AzureStorageDatastore(Datastore):
             download_stream = blob_client.download_blob()
             file.write(download_stream.readall())
 
+    def get_blob(self, full_path, filename):
+        container_name, path = full_path.split('/', 1)
+
+        container_client = self._service_client.get_container_client(container_name)
+        blob_client = container_client.get_blob_client(path + filename)
+        return blob_client.download_blob().readall()
+
     def upload(self, container_name, source, destination='', source_base=''):
         container_client = self._service_client.get_container_client(container_name)
 
@@ -65,3 +75,20 @@ class AzureStorageDatastore(Datastore):
                 file_path = os.path.join(root, name)
                 blob_path = prefix + dir_part + name
                 self.upload_file(container_client, file_path, blob_path, source_base)
+
+    def _list_files(self, container_client, fields, prefix=""):
+        for item in container_client.walk_blobs(name_starts_with=prefix):
+            if isinstance(item, BlobPrefix):
+                yield from self._list_files(
+                    container_client, fields, prefix=item.name)
+            else:
+                yield tuple(getattr(item, f) for f in fields)
+
+    def listdir(self, container_name: str, fields=None):
+        fields = fields or DEFAULT_FIELD_NAMES
+        try:
+            container_client = self._service_client.get_container_client(
+                container_name)
+            yield from self._list_files(container_client, fields)
+        except ResourceNotFoundError:
+            raise FileNotFoundError(f'Cannot find container {container_name}')
