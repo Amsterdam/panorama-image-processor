@@ -1,6 +1,4 @@
 import json
-import os
-import uuid
 
 from azure.storage.queue import QueueClient
 
@@ -15,7 +13,7 @@ class AzureStorageQueue(BaseQueue):
         self.connection_string = connection_string if connection_string else AZURE_STORAGE_CONNECTION_STRING
 
         assert self.connection_string, "A connection string must be provided or defined in" \
-                                        "config to use AzureStorageQueue"
+                                       "config to use AzureStorageQueue"
 
         self.queue = QueueClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING, self.name)
 

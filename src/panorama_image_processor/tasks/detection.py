@@ -1,5 +1,4 @@
 import os
-import pkgutil
 import sys
 
 import torch
@@ -39,7 +38,7 @@ class DetectionTask(BaseTask):
         names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
         meta_data = {}
         """
-        Note that TQDM will show the number of batches to be processed: So if you have 100 images and 
+        Note that TQDM will show the number of batches to be processed: So if you have 100 images and
         a batch size of 8, it will do np.ceil(100/8) --> 13 iterations.
         """
         for paths, imgs, im_originals in dataloader:

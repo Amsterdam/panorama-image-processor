@@ -1,5 +1,5 @@
 from math import log
-from numpy import arange, meshgrid, float64
+from numpy import arange, meshgrid
 from pathlib import Path
 from PIL import Image
 

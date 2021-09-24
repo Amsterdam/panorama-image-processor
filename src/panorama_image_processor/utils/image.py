@@ -2,7 +2,6 @@ import io
 import os
 
 from numpy import squeeze, dsplit, dstack, array, asarray
-from scipy import misc
 from scipy.ndimage import map_coordinates
 from PIL import Image, ImageOps
 import cv2
@@ -15,7 +14,7 @@ PANORAMA_HEIGHT = 4000
 SAMPLE_WIDTH = 480
 SAMPLE_HEIGHT = 320
 
-#bject_store = ObjectStore()
+# object_store = ObjectStore()
 
 
 def image2byte_array(image: Image, quality=80):
@@ -64,26 +63,26 @@ def get_raw_panorama_image(panorama_path, panorama_filename):
     return Image.open(os.path.join(PANORAMA_RAW_PATH, panorama_path, panorama_filename))
 
 
-def get_intermediate_panorama_image(panorama_path):
-    """
-    Gets the rendered, but un-blurred intermediate image from the
+# def get_intermediate_panorama_image(panorama_path):
+#     """
+#     Gets the rendered, but un-blurred intermediate image from the
+#
+#     :param panorama_path: path of the image
+#     :return: PIL image
+#     """
+#
+#     objectstore_id = {'container': 'intermediate', 'name': panorama_path}
+#     return byte_array2image(object_store.get_panorama_store_object(objectstore_id))
 
-    :param panorama_path: path of the image
-    :return: PIL image
-    """
 
-    objectstore_id = {'container': 'intermediate', 'name': panorama_path}
-    return byte_array2image(object_store.get_panorama_store_object(objectstore_id))
-
-
-def get_panorama_image(panorama_path):
-    """
-    Gets the rendered, blurred result image of the panorama
-
-    :param panorama_path: path of the image
-    :return: PIL image
-    """
-    return byte_array2image(object_store.get_datapunt_store_object(panorama_path))
+# def get_panorama_image(panorama_path):
+#     """
+#     Gets the rendered, blurred result image of the panorama
+#
+#     :param panorama_path: path of the image
+#     :return: PIL image
+#     """
+#     return byte_array2image(object_store.get_datapunt_store_object(panorama_path))
 
 
 def get_rgb_channels_from_array_image(array_img):
@@ -96,9 +95,11 @@ def get_rgb_channels_from_array_image(array_img):
     # split image in the 3 RGB channels
     return squeeze(dsplit(array_img, 3))
 
+
 def get_image_as_rgb_array(image_path):
     image_array = asarray(Image.open(image_path))
     return squeeze(dsplit(image_array, 3))
+
 
 def get_raw_panorama_as_rgb_array(panorama_path, panorama_filename):
     """
@@ -140,32 +141,32 @@ def sample_rgb_array_image_as_array(coordinates, rgb_array):
     return dstack((r, g, b))
 
 
-def save_image(image, name, in_panorama_store=False):
-    """
-    Save an PIL image in the objectstore
+# def save_image(image, name, in_panorama_store=False):
+#     """
+#     Save an PIL image in the objectstore
+#
+#     :param image: PIL image to save
+#     :param name: path to save the image at
+#     :param in_panorama_store: flag for choosing specific store
+#     """
+#     byte_array = io.BytesIO()
+#     image.save(byte_array, format='JPEG', optimize=True, progressive=True)
+#     if in_panorama_store:
+#         container, name = name.split('/')[0], '/'.join(name.split('/')[1:])
+#         object_store.put_into_panorama_store(container, name, byte_array.getvalue(), 'image/jpeg')
+#     else:
+#         object_store.put_into_datapunt_store(name, byte_array.getvalue(), 'image/jpeg')
+#
 
-    :param image: PIL image to save
-    :param name: path to save the image at
-    :param in_panorama_store: flag for choosing specific store
-    """
-    byte_array = io.BytesIO()
-    image.save(byte_array, format='JPEG', optimize=True, progressive=True)
-    if in_panorama_store:
-        container, name = name.split('/')[0], '/'.join(name.split('/')[1:])
-        object_store.put_into_panorama_store(container, name, byte_array.getvalue(), 'image/jpeg')
-    else:
-        object_store.put_into_datapunt_store(name, byte_array.getvalue(), 'image/jpeg')
-
-
-def save_array_image(array_img, name, in_panorama_store=False):
-    """
-    Save a scipy image array in the objectstore
-
-    :param array_img: scipy image array to save
-    :param name: path to save the image at
-    :param in_panorama_store: flag for choosing specific store
-    """
-    save_image(Image.fromarray(array_img), name, in_panorama_store)
+# def save_array_image(array_img, name, in_panorama_store=False):
+#     """
+#     Save a scipy image array in the objectstore
+#
+#     :param array_img: scipy image array to save
+#     :param name: path to save the image at
+#     :param in_panorama_store: flag for choosing specific store
+#     """
+#     save_image(Image.fromarray(array_img), name, in_panorama_store)
 
 
 def roll_left(image, shift, width, height):

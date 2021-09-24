@@ -1,8 +1,4 @@
-import os
-from PIL import Image, ImageOps
-
 from panorama_image_processor.utils.image import get_image_as_rgb_array
-from panorama_image_processor.utils import math as Math
 
 # specific property of our pano set source images
 SOURCE_WIDTH = 8000     # pixels

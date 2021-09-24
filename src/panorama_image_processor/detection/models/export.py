@@ -3,6 +3,7 @@
 Usage:
     $ export PYTHONPATH="$PWD" && python models/export.py --weights ./weights/yolov5s.pt --img 640 --batch 1
 """
+# flake8: noqa
 
 import argparse
 import sys

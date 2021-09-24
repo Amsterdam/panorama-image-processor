@@ -7,6 +7,7 @@ from azure.storage.blob import BlobServiceClient
 from .base import Datastore
 from panorama_image_processor.config import AZURE_STORAGE_CONNECTION_STRING, PANORAMA_RAW_PATH
 
+
 class ObjectstoreDatastore(Datastore):
 
     def __init__(self):

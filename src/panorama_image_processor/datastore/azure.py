@@ -12,6 +12,7 @@ from panorama_image_processor.config import PANORAMA_RAW_PATH
 BLOB_DIR = 'd'
 BLOB_FILE = 'f'
 
+
 class AzureStorageDatastore(Datastore):
 
     def __init__(self, connection_config={}):
