@@ -1,0 +1,17 @@
+[flake8]
+exclude=.git,
+        .cfg,
+        .ini,
+        .sh,
+        .yml,
+        ./src/objectstore/,
+        __pycache__,
+        ./.uwsgi_plugins_builder/*,
+        ./uwsgi-consul,
+        migrations,
+        docs,
+        tests,
+        scripts,
+        */settings_commons.py
+max-complexity=7
+max-line-length = 119

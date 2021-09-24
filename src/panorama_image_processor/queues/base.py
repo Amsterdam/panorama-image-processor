@@ -31,7 +31,6 @@ class BaseQueue(object):
         """
         raise NotImplementedError
 
-
     def delete_message(self, message_id):
         """
         Delete a specific message from the queue.

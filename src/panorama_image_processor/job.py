@@ -95,6 +95,7 @@ class PanoramaJob(object):
                 self.workflow[self.status]()
             except KeyError:
                 print(f"No action defined for the current status ({self.status})")
+                raise
 
     def _get_raw_panorama(self):
         print("Get raw panorama")
@@ -103,7 +104,8 @@ class PanoramaJob(object):
 
     def _transform_equirectangular(self):
         print("Transform raw panorama to equirectangular")
-        equirectangular_transformer = EquirectangularTransformer(self.raw_filename, self.heading, self.pitch, self.roll)
+        equirectangular_transformer = EquirectangularTransformer(
+            self.raw_filename, self.heading, self.pitch, self.roll)
         projected_panorama = equirectangular_transformer.get_projection()
         # Make sure the directory exists
         Path(self.intermediate_filename).parent.mkdir(parents=True, exist_ok=True)

@@ -21,5 +21,3 @@ class BaseTask(object):
 
     def run(self):
         pass
-
-

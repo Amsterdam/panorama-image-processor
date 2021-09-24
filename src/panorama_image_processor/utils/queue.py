@@ -1,6 +1,4 @@
 import asyncio
-from asyncio.tasks import wait_for
-from asyncio.queues import Queue
 import click
 import time
 import datetime
@@ -238,6 +236,15 @@ class MissionCollector():
         print('\nMissing files:')
         for mission, missing in report_missing:
             print(mission + ': ' + ','.join(missing))
+
+
+def limit(iterable, limit: int):
+    count = 0
+    for i in iterable:
+        yield iterable
+        count += 1
+        if count == limit:
+            break
 
 
 def queue_prepare(base_path: str, limit: int, out_file):

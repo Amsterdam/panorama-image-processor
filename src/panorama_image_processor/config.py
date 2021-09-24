@@ -32,6 +32,7 @@ DATASTORE_CONFIG = {
     }
 }
 
+
 def get_datastore_config(name: str) -> dict:
     try:
         config = DATASTORE_CONFIG[name].copy()

@@ -6,14 +6,13 @@ from panorama_image_processor.queues.azure import AzureStorageQueue
 from panorama_image_processor.utils.queue import \
     queue_flush, queue_speed, queue_peek, queue_fill, queue_prepare, queue_status
 
-processing_queue = AzureStorageQueue(PANORAMA_PROCESSING_QUEUE)
-
+def get_processing_queue():
+    return AzureStorageQueue(PANORAMA_PROCESSING_QUEUE)
 
 def main():
     workers = []
-
     for x in range(WORKERS):
-        worker = PanoramaWorker(processing_queue)
+        worker = PanoramaWorker(get_processing_queue())
         workers.append(worker)
         worker.start()
 
@@ -32,7 +31,7 @@ def queue():
 @click.option('--dry-run/--no-dry-run', default=False, help='Do not fill the queue')
 @click.argument('msgfile', type=click.File('r'))
 def fill(dry_run, msgfile):
-    queue_fill(msgfile, processing_queue, dry_run=dry_run)
+    queue_fill(msgfile, get_processing_queue(), dry_run=dry_run)
 
 
 @queue.command()
@@ -64,6 +63,7 @@ def prepare(limit, container, outfile):
     '''
     queue_prepare(container, limit, outfile)
 
+
 @queue.command()
 @click.option('--interval', default=10, help='Measurement interval in seconds')
 def speed(interval: int):
@@ -72,7 +72,7 @@ def speed(interval: int):
     queue.
     '''
     print(f'Calculating speed with an interval of {interval} seconds')
-    queue_speed(processing_queue, interval)
+    queue_speed(get_processing_queue(), interval)
     print('Calculating speed finished')
 
 
@@ -81,7 +81,7 @@ def flush():
     '''
     Flushes the queue with all the messages, handle with care
     '''
-    queue_flush(processing_queue)
+    queue_flush(get_processing_queue())
 
 
 @queue.command()
@@ -89,8 +89,4 @@ def peek():
     '''
     Flushes queue and return remaining messages to stdout.
     '''
-    queue_peek(processing_queue)
-
-
-if __name__ == '__main__':
-    main()
+    queue_peek(get_processing_queue())

@@ -5,6 +5,7 @@ from .base import BasePanoramaTransformer, PANO_HEIGHT, SOURCE_WIDTH
 from panorama_image_processor.utils import image as Img
 from panorama_image_processor.utils import math as Math
 
+
 class EquirectangularTransformer(BasePanoramaTransformer):
 
     def __init__(self, image_path, heading=0, pitch=0, roll=0, rotation_matrix=None):
@@ -15,7 +16,8 @@ class EquirectangularTransformer(BasePanoramaTransformer):
 
     def get_projection(self, target_width=SOURCE_WIDTH):
 
-        # create the target pixel set expressed as coordinates of a normalized equirectangular view of given source-size
+        # create the target pixel set expressed as coordinates of a normalized
+        #  equirectangular view of given source-size
         x, y = self._create_sample_set(target_width)
 
         # transform image coordinates in equirectangular projection to cartesian vectors with r=1

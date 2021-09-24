@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from scipy import misc
 from PIL import Image
 
 from .base import BaseTask, TaskStatus

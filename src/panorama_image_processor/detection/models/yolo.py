@@ -1,3 +1,4 @@
+# flake8: noqa
 # YOLOv5 YOLO-specific modules
 
 import argparse

@@ -1,3 +1,4 @@
+# flake8: noqa
 # Google utils: https://cloud.google.com/storage/docs/reference/libraries
 
 import os
