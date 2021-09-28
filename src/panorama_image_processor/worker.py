@@ -1,3 +1,4 @@
+import time
 from threading import Thread
 
 from azure.core.exceptions import ResourceNotFoundError
@@ -13,15 +14,17 @@ class PanoramaWorker(Thread):
         self.queue = queue
         self.job = None
         self.message = None
+        self._isrunning = True
 
     def run(self):
         print("Worker started")
-        while True:
+        while self._isrunning:
             try:
                 # Get the next job from the panorama-processing-queue
                 message, job_info = self.queue.dequeue()
             except EmptyQueueException:
-                break
+                time.sleep(60)
+                continue
 
             # Create the panorama job and store the current message
             self.job = PanoramaJob(**job_info)
