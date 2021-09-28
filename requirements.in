@@ -1,5 +1,6 @@
 azure-storage-blob
 azure-storage-queue
+click
 matplotlib
 numpy
 opencv-python
