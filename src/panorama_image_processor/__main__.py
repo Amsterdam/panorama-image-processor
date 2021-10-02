@@ -4,7 +4,7 @@ from panorama_image_processor.config import WORKERS
 from panorama_image_processor.worker import PanoramaWorker
 from panorama_image_processor.queues.azure import AzureStorageQueue
 from panorama_image_processor.utils.queue import \
-    queue_flush, queue_speed, queue_peek, queue_fill, queue_prepare
+    queue_flush, queue_speed, queue_peek, queue_fill, queue_prepare, queue_status
 
 processing_queue = AzureStorageQueue('panorama-processing-queue')
 result_queue = AzureStorageQueue('panorama-result-queue')
@@ -34,6 +34,19 @@ def queue():
 @click.argument('msgfile', type=click.File('r'))
 def fill(dry_run, msgfile):
     queue_fill(msgfile, processing_queue, dry_run=dry_run)
+
+
+@queue.command()
+@click.option('--batch-size', type=int, default=5000,
+              help='Batch size for getting status info')
+@click.argument('msgfile', type=click.File('r'))
+def status(msgfile, batch_size):
+    '''
+       Checks if a all messages in \b msgfile \b are processed
+       by checking if the equirectangle plsu the cubic are present
+       in the processed object store.
+    '''
+    queue_status(msgfile, batch_size)
 
 
 @queue.command()

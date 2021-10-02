@@ -8,6 +8,7 @@ import io
 import csv
 import sys
 from os import path
+from pathlib import Path
 from collections import defaultdict
 
 from tabulate import tabulate
@@ -61,14 +62,6 @@ def queue_speed(storage_queue: AzureStorageQueue, interval_sec: int):
         print(f'ETA= { eta }, approx {delta_sec.days} days from now')
 
 
-def queue_peek(storage_queue: AzureStorageQueue, max_messages=32):
-    '''
-    Peeks at messages in the queue, with visibility timeout not set.
-    '''
-    for msg in storage_queue.queue.peek_messages(max_messages=max_messages):
-        print(msg.content)
-
-
 def grouper(iterable, n):
     chunk = []
     for i in iterable:
@@ -78,6 +71,60 @@ def grouper(iterable, n):
             chunk = []
     if chunk:
         yield chunk
+
+
+async def check_message(container_client, msg):
+    '''
+      Expected to be present in processed container is ('cubic/', 'equirectangular/')
+    '''
+    base_path = Path(msg['path']) / Path(msg['filename']).stem
+    blobs = set()
+    async for blob in container_client.walk_blobs(name_starts_with=str(base_path) + '/', timeout=10):
+        blobs.add(blob.name)
+    expected = { msg['path'] + Path(msg['filename']).stem + '/' + i for i in ('cubic/', 'equirectangular/')}
+    return json.dumps(msg) if expected != blobs else None
+
+
+async def queue_status_async(msgs, connection_string, batch_size):
+    ret = []
+    from azure.storage.blob.aio import BlobServiceClient
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    async with blob_service_client:
+        container_client = blob_service_client.get_container_client('processed')
+        with click.progressbar(length=len(msgs)) as bar:
+            for msgs_chunk in grouper(msgs, batch_size):
+                res = await asyncio.gather(
+                    *[check_message(container_client, msg) for msg in msgs_chunk],
+                    return_exceptions=True)
+                [ret.append(r) for r in res if r is not None]
+                bar.update(len(res))
+        await container_client.close()
+    return ret
+
+
+def queue_status(msgfile, batch_size):
+    object_store = None
+    msgs = [json.loads(line.strip()) for line in msgfile]
+    first_msg = msgs[0]
+    ds = get_datastore_config(first_msg['destination'])
+    object_store = DatastoreFactory.get_datastore(ds)
+    loop = asyncio.get_event_loop()
+    res = loop.run_until_complete(queue_status_async(msgs, object_store._connection_string, batch_size))
+    if len(res):
+        fname = msgfile.name + '.missing'
+        print(f'Missing panorama images found, result in {fname}')
+        with open(fname, 'w') as f:
+            f.writelines([r + '\n' for r in res])
+    else:
+        print('No missing panorama images found')
+
+
+def queue_peek(storage_queue: AzureStorageQueue, max_messages=32):
+    '''
+    Peeks at messages in the queue, with visibility timeout not set.
+    '''
+    for msg in storage_queue.queue.peek_messages(max_messages=max_messages):
+        print(msg.content)
 
 
 def queue_flush(storage_queue: AzureStorageQueue):
@@ -117,7 +164,6 @@ class MissionCollector():
                 yield {
                     'source': 'azure_panorama',
                     'destination': 'azure_panorama',
-                    'path': '/'.join((self.base_path, missie_path)) + '/',
                     'filename': filename_ext,
                     'heading': float(row['heading[deg]']),
                     'roll': float(row['roll[deg]']),
@@ -155,7 +201,7 @@ def queue_prepare(base_path: str, limit: int, out_file):
     all_files = defaultdict(list)
     all_file_sizes = dict()
     try:
-        for idx, (name, size) in enumerate(object_store.listdir(
+        for idx, (name, size) in enumerate(object_store.listfiles(
                 base_path, fields=['name', 'size'])):
             try:
                 path, fname = name.rsplit('/', 1)
@@ -182,21 +228,19 @@ def queue_prepare(base_path: str, limit: int, out_file):
 
 async def queue_fill_async(
         msg_file, queue: BaseQueue, dry_run, batch_size: int = 10000):
-    total = 0
     print('Filling processing queue')
     connection_string = queue.connection_string
     queue_client = QueueClient.from_connection_string(
         connection_string, queue_name=PANORAMA_PROCESSING_QUEUE)
-    for msgs in grouper(msg_file, batch_size):
-        if not dry_run:
-            await asyncio.gather(*[
-                queue_client.send_message(m.strip(), timeout=10)
-                for m in msgs if m.strip() != ''])
-        total += len(msgs)
-        print('.', end='')
-        sys.stdout.flush()
-    print('')
-    print(f'Finished processing total={total}')
+    msgs = [line.strip() for line in msg_file]
+    with click.progressbar(length=len(msgs)) as bar:
+        for msgs_chunk in grouper(msgs, batch_size):
+            if not dry_run:
+                await asyncio.gather(*[
+                    queue_client.send_message(m.strip(), timeout=10)
+                    for m in msgs_chunk if m.strip() != ''])
+            bar.update(len(msgs_chunk))
+    print(f'Finished processing total={len(msgs)}')
     await queue_client.close()
 
 

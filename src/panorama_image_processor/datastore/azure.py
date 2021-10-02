@@ -11,6 +11,9 @@ from panorama_image_processor.config import PANORAMA_RAW_PATH
 
 DEFAULT_FIELD_NAMES = ['name']
 
+BLOB_DIR = 'd'
+BLOB_FILE = 'f'
+
 class AzureStorageDatastore(Datastore):
 
     def __init__(self, connection_config={}):
@@ -19,6 +22,7 @@ class AzureStorageDatastore(Datastore):
         self._connection_string = connection_config.get('connection_string')
 
         self._service_client = self.connect()
+        self.container_client = None
 
     def connect(self):
         return BlobServiceClient.from_connection_string(self._connection_string)
@@ -76,19 +80,34 @@ class AzureStorageDatastore(Datastore):
                 blob_path = prefix + dir_part + name
                 self.upload_file(container_client, file_path, blob_path, source_base)
 
-    def _list_files(self, container_client, fields, prefix=""):
+    @staticmethod
+    def _list_dir(container_client, prefix=""):
         for item in container_client.walk_blobs(name_starts_with=prefix):
-            if isinstance(item, BlobPrefix):
+            yield item
+
+    def listdir(self, container_name: str, prefix="", container_client = None, recursive=False):
+        prefix = prefix + '/' if prefix[-1] != '/' else prefix
+        if container_client is None:
+            self.container_client = self._service_client.get_container_client(container_name)
+        for blob_prob in self._list_dir(self.container_client, prefix):
+            _type = BLOB_DIR if isinstance(blob_prob, BlobPrefix) else BLOB_FILE
+            yield _type, blob_prob.name
+            if recursive and _type == BLOB_DIR:
+                self.listdir(self.container_client, prefix=Path(prefix) / blob_prob.name, recursive=recursive)
+
+    def _list_files(self, container_client, fields, prefix="", recursive=True):
+        for item in self._list_dir(container_client, name_starts_with=prefix):
+            if isinstance(item, BlobPrefix) and recursive:
                 yield from self._list_files(
-                    container_client, fields, prefix=item.name)
+                    container_client, fields, prefix=item.name, recursive=recursive)
             else:
                 yield tuple(getattr(item, f) for f in fields)
 
-    def listdir(self, container_name: str, fields=None):
+    def listfiles(self, container_name: str, fields=None, recursive=False):
         fields = fields or DEFAULT_FIELD_NAMES
         try:
             container_client = self._service_client.get_container_client(
                 container_name)
-            yield from self._list_files(container_client, fields)
+            yield from self._list_files(container_client, fields, recursive=recursive)
         except ResourceNotFoundError:
             raise FileNotFoundError(f'Cannot find container {container_name}')
