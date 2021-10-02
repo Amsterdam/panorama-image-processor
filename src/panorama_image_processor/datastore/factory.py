@@ -2,7 +2,6 @@ from panorama_image_processor.datastore.base import Datastore, AZURE_STORAGE, OB
 from panorama_image_processor.datastore.azure import AzureStorageDatastore
 from panorama_image_processor.datastore.objectstore import ObjectstoreDatastore
 
-
 class DatastoreFactory:
 
     @staticmethod
