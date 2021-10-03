@@ -62,6 +62,22 @@ def queue_speed(storage_queue: AzureStorageQueue, interval_sec: int):
         print(f'ETA= { eta }, approx {delta_sec.days} days from now')
 
 
+async def _coroutine_with_retries( coroutine, retries: int, batchsize: int):
+    '''
+    Coroutine from Azure are not that stable, and sometimes do not respond
+    back. No problem, just retry...
+    '''
+    timeout = batchsize // 100
+    while retries > 0:
+        try:
+            return await asyncio.wait_for(coroutine, timeout=timeout)
+            break
+        except asyncio.TimeoutError:
+            retries -= 1
+            if retries == 0:
+                raise
+
+
 def grouper(iterable, n):
     chunk = []
     for i in iterable:
@@ -82,34 +98,35 @@ async def check_message(container_client, msg):
     async for blob in container_client.walk_blobs(name_starts_with=str(base_path) + '/', timeout=10):
         blobs.add(blob.name)
     expected = { msg['path'] + Path(msg['filename']).stem + '/' + i for i in ('cubic/', 'equirectangular/')}
-    return json.dumps(msg) if expected != blobs else None
+    return json.dumps(msg) if (expected - blobs) else None
 
 
-async def queue_status_async(msgs, connection_string, batch_size):
+async def queue_status_async(msgs, connection_string, batchsize):
     ret = []
     from azure.storage.blob.aio import BlobServiceClient
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     async with blob_service_client:
         container_client = blob_service_client.get_container_client('processed')
         with click.progressbar(length=len(msgs)) as bar:
-            for msgs_chunk in grouper(msgs, batch_size):
-                res = await asyncio.gather(
-                    *[check_message(container_client, msg) for msg in msgs_chunk],
-                    return_exceptions=True)
+            for msgs_chunk in grouper(msgs, batchsize):
+                res = await _coroutine_with_retries(asyncio.gather(
+                            *[check_message(container_client, msg) for msg in msgs_chunk],
+                            return_exceptions=True), retries=3, batchsize=batchsize)
                 [ret.append(r) for r in res if r is not None]
                 bar.update(len(res))
         await container_client.close()
     return ret
 
 
-def queue_status(msgfile, batch_size):
+def queue_status(msgfile, batchsize):
     object_store = None
     msgs = [json.loads(line.strip()) for line in msgfile]
     first_msg = msgs[0]
     ds = get_datastore_config(first_msg['destination'])
     object_store = DatastoreFactory.get_datastore(ds)
     loop = asyncio.get_event_loop()
-    res = loop.run_until_complete(queue_status_async(msgs, object_store._connection_string, batch_size))
+    res = loop.run_until_complete(queue_status_async(msgs, object_store._connection_string, batchsize))
+    loop.close()
     if len(res):
         fname = msgfile.name + '.missing'
         print(f'Missing panorama images found, result in {fname}')
