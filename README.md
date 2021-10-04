@@ -4,8 +4,12 @@ The new panorama image processor container using the algoritm developed by CTO.
 
 ## Tools
 
-Two tools areavailable, `speed` and `process`.
-`Speed` calulates the speed for the panorma processor based on the dequeuing of the
-processing quue, and gives gives an estimation of the speed and the ETA.
-`Process` will fill the processing queue based on missions in te azure container store.
-One azure container contains all the missions for a year.
+Tools are available in the virtualenv with the queue command.
+These tools are dedicated to Azure for now.
+Intention for the queue tools is to:
+ *. prepare missions to a message file
+ *. fill the processing queue with a message file
+ *. Calc the processing speed for the current queued messages
+ *. Get the status for a processed compared to a message file
+ *. Flush (clear) a complete queue
+ *. Peek for a couple of messages in the queue
