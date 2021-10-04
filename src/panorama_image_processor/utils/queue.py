@@ -1,12 +1,14 @@
 import asyncio
+from asyncio.tasks import wait_for
 from re import M
+from asyncio.queues import Queue
 import click
 import time
 import datetime
 import json
 import io
 import csv
-import sys
+from queue import Queue
 from os import path
 from pathlib import Path
 from collections import defaultdict
@@ -243,6 +245,19 @@ def queue_prepare(base_path: str, limit: int, out_file):
     mission_collector.print_report()
 
 
+async def _send_message(queue_client: QueueClient, msg: str, timeout: int, res_queue: asyncio.Queue):
+    try:
+        # queue_client.send_message(msg, timeout)
+        res_queue.put(msg)
+    except Exception:
+        print('Error filling')
+
+def _empty_queue(queue: Queue):
+    ret = set()
+    while not queue.empty():
+        ret.add(queue.get())
+    return ret
+
 async def queue_fill_async(
         msg_file, queue: BaseQueue, dry_run, batch_size: int = 10000):
     print('Filling processing queue')
@@ -253,9 +268,20 @@ async def queue_fill_async(
     with click.progressbar(length=len(msgs)) as bar:
         for msgs_chunk in grouper(msgs, batch_size):
             if not dry_run:
-                await asyncio.gather(*[
-                    queue_client.send_message(m.strip(), timeout=10)
-                    for m in msgs_chunk if m.strip() != ''])
+                msg_done_queue =  Queue()
+                while retries:=3 > 0:
+                    try:
+                        await asyncio.wait_for(
+                                asyncio.gather(
+                                    *[_send_message(queue_client, m.strip(), timeout=10, res_queue=msg_done_queue)
+                                    for m in msgs_chunk if m.strip() != '']), batch_size // 100)
+                        break
+                    except asyncio.TimeoutError:
+                        msgs_chunk = set(msgs_chunk) - set(m for m in _empty_queue(msg_done_queue))
+                        retries -= 1
+                        if retries == 0:
+                            raise
+                assert len(msgs_chunk) == len(_empty_queue(msg_done_queue))
             bar.update(len(msgs_chunk))
     print(f'Finished processing total={len(msgs)}')
     await queue_client.close()
@@ -264,3 +290,4 @@ async def queue_fill_async(
 def queue_fill(msg_file, queue: BaseQueue, dry_run):
     loop = asyncio.get_event_loop()
     loop.run_until_complete(queue_fill_async(msg_file, queue, dry_run))
+    loop.close()
