@@ -9,8 +9,6 @@ from azure.core.exceptions import ResourceNotFoundError
 from .base import Datastore
 from panorama_image_processor.config import PANORAMA_RAW_PATH
 
-DEFAULT_FIELD_NAMES = ['name']
-
 BLOB_DIR = 'd'
 BLOB_FILE = 'f'
 
@@ -95,19 +93,22 @@ class AzureStorageDatastore(Datastore):
             if recursive and _type == BLOB_DIR:
                 self.listdir(self.container_client, prefix=Path(prefix) / blob_prob.name, recursive=recursive)
 
-    def _list_files(self, container_client, fields, prefix="", recursive=True):
-        for item in self._list_dir(container_client, name_starts_with=prefix):
-            if isinstance(item, BlobPrefix) and recursive:
-                yield from self._list_files(
-                    container_client, fields, prefix=item.name, recursive=recursive)
+    def _list_files(self, container_client, extra_fields, prefix="", recursive=True):
+        for item in self._list_dir(container_client, prefix=prefix):
+            if isinstance(item, BlobPrefix):
+                if recursive:
+                    yield from self._list_files(
+                        container_client, extra_fields, prefix=item.name, recursive=recursive)
             else:
-                yield tuple(getattr(item, f) for f in fields)
+                ret = (item.name,)
+                ret += tuple(getattr(item, f) for f in extra_fields)
+                yield ret
 
-    def listfiles(self, container_name: str, fields=None, recursive=False):
-        fields = fields or DEFAULT_FIELD_NAMES
+    def listfiles(self, container_name: str, extra_fields=None, recursive=False):
+        extra_fields = extra_fields or []
         try:
             container_client = self._service_client.get_container_client(
                 container_name)
-            yield from self._list_files(container_client, fields, recursive=recursive)
+            yield from self._list_files(container_client, extra_fields, recursive=recursive)
         except ResourceNotFoundError:
             raise FileNotFoundError(f'Cannot find container {container_name}')
