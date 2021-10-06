@@ -111,24 +111,6 @@ async def _process_chunk(msgs_chunk: list[str], func, **func_args):
     return result
 
 
-
-
-async def _coroutine_with_retries( coroutine, retries: int, batchsize: int):
-    '''
-    Coroutine from Azure are not that stable, and sometimes do not respond
-    back. No problem, just retry...
-    '''
-    timeout = batchsize // 100
-    while retries > 0:
-        try:
-            return await asyncio.wait_for(coroutine, timeout=timeout)
-            break
-        except asyncio.TimeoutError:
-            retries -= 1
-            if retries == 0:
-                raise
-
-
 def grouper(iterable, n):
     chunk = []
     for i in iterable:
@@ -296,7 +278,7 @@ def queue_prepare(base_path: str, limit: int, out_file):
 async def _send_message(msg: str, res_queue: asyncio.Queue, dry_run: bool, queue_client: QueueClient):
     try:
         if not dry_run:
-            await queue_client.send_message(msg)
+            await queue_client.send_message(msg, timeout=1)
         res_queue.put(msg)
     except Exception:
         print('Error filling')

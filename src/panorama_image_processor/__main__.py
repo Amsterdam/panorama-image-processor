@@ -1,13 +1,12 @@
 import click
 
-from panorama_image_processor.config import WORKERS
+from panorama_image_processor.config import WORKERS, PANORAMA_PROCESSING_QUEUE
 from panorama_image_processor.worker import PanoramaWorker
 from panorama_image_processor.queues.azure import AzureStorageQueue
 from panorama_image_processor.utils.queue import \
     queue_flush, queue_speed, queue_peek, queue_fill, queue_prepare, queue_status
 
-processing_queue = AzureStorageQueue('panorama-processing-queue')
-result_queue = AzureStorageQueue('panorama-result-queue')
+processing_queue = AzureStorageQueue(PANORAMA_PROCESSING_QUEUE)
 
 
 def main():
