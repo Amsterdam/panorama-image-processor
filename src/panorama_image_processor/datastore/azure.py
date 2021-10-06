@@ -83,16 +83,6 @@ class AzureStorageDatastore(Datastore):
         for item in container_client.walk_blobs(name_starts_with=prefix):
             yield item
 
-    def listdir(self, container_name: str, prefix="", container_client = None, recursive=False):
-        prefix = prefix + '/' if prefix[-1] != '/' else prefix
-        if container_client is None:
-            self.container_client = self._service_client.get_container_client(container_name)
-        for blob_prob in self._list_dir(self.container_client, prefix):
-            _type = BLOB_DIR if isinstance(blob_prob, BlobPrefix) else BLOB_FILE
-            yield _type, blob_prob.name
-            if recursive and _type == BLOB_DIR:
-                self.listdir(self.container_client, prefix=Path(prefix) / blob_prob.name, recursive=recursive)
-
     def _list_files(self, container_client, extra_fields, prefix="", recursive=True):
         for item in self._list_dir(container_client, prefix=prefix):
             if isinstance(item, BlobPrefix):
