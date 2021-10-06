@@ -20,7 +20,7 @@ class PanoramaWorker(Thread):
         print("Worker started")
         while self._isrunning:
             try:
-                # Get the next job from the panorama-processing-queue
+                # Get the next job from the queue
                 message, job_info = self.queue.dequeue()
             except EmptyQueueException:
                 time.sleep(60)
