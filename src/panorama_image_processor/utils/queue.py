@@ -72,7 +72,7 @@ def _async_loop(func):
     return ret
 
 
-async def _process_chunk(msgs_chunk: list[str], func, **func_args):
+async def _process_chunk(msgs_chunk: list[str], func, retries=3, **func_args):
     '''
      Process a chunk of messages, using a result queue, named res_queue
      to report back which of the messages are handled succesfull.
@@ -92,15 +92,14 @@ async def _process_chunk(msgs_chunk: list[str], func, **func_args):
     processed = 0
     result = []
     timeout = max(len(msgs_chunk) // 100, 10)
-    while retries:=3 > 0:
+    while retries > 0:
+        coroutines = [func(m, res_queue=msg_done_queue, **func_args)
+                        for m in remaining_msgs if m.strip() != '']
         try:
-            coroutines = [func(m, res_queue=msg_done_queue, **func_args)
-                          for m in remaining_msgs if m.strip() != '']
             result += await asyncio.wait_for(asyncio.gather(*coroutines), timeout)
-            processed += len(remaining_msgs)
+            processed += len(result)
             break
         except asyncio.TimeoutError:
-            print('Retry')
             queued_messages = set(m for m in _empty_queue(msg_done_queue))
             processed += len(queued_messages)
             remaining_msgs = set(remaining_msgs) - queued_messages
@@ -278,7 +277,7 @@ def queue_prepare(base_path: str, limit: int, out_file):
 async def _send_message(msg: str, res_queue: asyncio.Queue, dry_run: bool, queue_client: QueueClient):
     try:
         if not dry_run:
-            await queue_client.send_message(msg, timeout=1)
+            await queue_client.send_message(msg, timeout=10)
         res_queue.put(msg)
     except Exception:
         print('Error filling')
