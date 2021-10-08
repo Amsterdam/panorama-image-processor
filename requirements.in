@@ -1,4 +1,4 @@
-aiohttp
+aiohttp[speedups]
 azure-storage-blob
 azure-storage-queue
 click

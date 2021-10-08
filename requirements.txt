@@ -4,7 +4,9 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-aiohttp==3.7.4
+aiodns==3.0.0
+    # via aiohttp
+aiohttp[speedups]==3.7.4
     # via -r requirements.in
 async-timeout==3.0.1
     # via aiohttp
@@ -18,13 +20,20 @@ azure-storage-blob==12.8.1
     # via -r requirements.in
 azure-storage-queue==12.1.6
     # via -r requirements.in
+brotlipy==0.7.0
+    # via aiohttp
+cchardet==2.1.7
+    # via aiohttp
 certifi==2021.5.30
     # via
     #   msrest
     #   requests
 cffi==1.14.5
-    # via cryptography
-chardet==4.0.0
+    # via
+    #   brotlipy
+    #   cryptography
+    #   pycares
+chardet==3.0.4
     # via
     #   aiohttp
     #   requests
@@ -79,6 +88,8 @@ pillow==8.3.2
     #   -r requirements.in
     #   matplotlib
     #   torchvision
+pycares==4.0.0
+    # via aiodns
 pycparser==2.20
     # via cffi
 pyparsing==2.4.7
