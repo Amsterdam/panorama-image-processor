@@ -85,14 +85,14 @@ async def _process_chunk(msgs_chunk: list[str], func, retries=3, **func_args):
             ret.add(queue.get())
         return ret
 
-    msg_done_queue =  Queue()
+    msg_done_queue = Queue()
     remaining_msgs = set(msgs_chunk)
     processed = 0
     result = []
     timeout = max(len(msgs_chunk) // 100, 10)
     while retries > 0:
         coroutines = [func(m, res_queue=msg_done_queue, **func_args)
-                        for m in remaining_msgs if m.strip() != '']
+                      for m in remaining_msgs if m.strip() != '']
         try:
             result += await asyncio.wait_for(asyncio.gather(*coroutines), timeout)
             processed += len(result)
@@ -129,7 +129,7 @@ async def _check_message(msg_str, res_queue: Queue, container_client):
     blobs = set()
     async for blob in container_client.walk_blobs(name_starts_with=str(base_path) + '/', timeout=10):
         blobs.add(blob.name)
-    expected = { msg['path'] + Path(msg['filename']).stem + '/' + i for i in ('cubic/', 'equirectangular/')}
+    expected = {msg['path'] + Path(msg['filename']).stem + '/' + i for i in ('cubic/', 'equirectangular/')}
     res_queue.put(msg_str)
     return json.dumps(msg) if (expected - blobs) else None
 
@@ -193,8 +193,8 @@ class MissionCollector():
         self.mission_zero = defaultdict(list)
         for missie_path, files in self.missie_files.items():
             files_ext_map = {path.splitext(f)[0]: f for f in files}
-            full_path='/'.join((self.base_path, missie_path)) + '/'
-            pano_csv = self.object_store.get_blob( full_path=full_path, filename=PANORAMA_FILE)
+            full_path = '/'.join((self.base_path, missie_path)) + '/'
+            pano_csv = self.object_store.get_blob(full_path=full_path, filename=PANORAMA_FILE)
             pano_csv_reader = csv.DictReader(
                 io.StringIO(pano_csv.decode('utf-8')), delimiter='\t')
             for row in pano_csv_reader:
@@ -247,7 +247,7 @@ def limit(iterable, limit: int):
             break
 
 
-def queue_prepare(base_path: str, limit: int, out_file):
+def queue_prepare(base_path: str, limit: int, out_file):  # noqa: C901
     source = 'azure_panorama'
     print(f'Processing container={base_path}')
     source_datastore_config = get_datastore_config(source)
@@ -288,6 +288,7 @@ async def _send_message(msg: str, res_queue: asyncio.Queue, dry_run: bool, queue
         res_queue.put(msg)
     except Exception:
         print('Error filling')
+
 
 async def queue_fill_async(msg_file, queue: BaseQueue, dry_run, batch_size: int = 10000):
     print('Filling processing queue', file=sys.stderr)

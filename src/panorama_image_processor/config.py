@@ -5,6 +5,7 @@ from panorama_image_processor.datastore.base import AZURE_STORAGE, OBJECTSTORE
 from panorama_image_processor.exceptions import DatastoreConfigException
 
 WORKERS = int(os.getenv('WORKERS', 1))
+EMPTY_PROCESSING_QUEUE_TIMEOUT = int(os.getenv('EMPTY_PROCESSING_QUEUE_TIMEOUT', 60))
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DETECTION_BASE_PATH = PROJECT_ROOT / 'detection'
