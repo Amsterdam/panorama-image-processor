@@ -7,11 +7,11 @@ from panorama_image_processor.worker import PanoramaWorker
 from panorama_image_processor.queues.base import EmptyQueueException
 
 
-@patch('panorama_image_processor.worker.PanoramaJob')
+@patch("panorama_image_processor.worker.PanoramaJob")
 def test_PanoramaWorker(PanoramaJob):
 
     queue = MagicMock()
-    worker = PanoramaWorker(queue)
+    worker = PanoramaWorker(queue, exit_on_empty=True)
     Message = namedtuple('Message', ['id'])
     message = Message('123')
     job_info = {'info': 'info'}
