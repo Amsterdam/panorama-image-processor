@@ -9,12 +9,13 @@ from panorama_image_processor.queues.base import EmptyQueueException
 
 class PanoramaWorker(Thread):
 
-    def __init__(self, queue):
+    def __init__(self, queue, exit_on_empty=True):
         Thread.__init__(self)
         self.queue = queue
         self.job = None
         self.message = None
         self._isrunning = True
+        self._exit_on_empty = exit_on_empty
 
     def run(self):
         print("Worker started")
@@ -23,6 +24,8 @@ class PanoramaWorker(Thread):
                 # Get the next job from the queue
                 message, job_info = self.queue.dequeue()
             except EmptyQueueException:
+                if self._exit_on_empty:
+                    break
                 time.sleep(60)
                 continue
 
