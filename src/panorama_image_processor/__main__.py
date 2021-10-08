@@ -6,8 +6,10 @@ from panorama_image_processor.queues.azure import AzureStorageQueue
 from panorama_image_processor.utils.queue import \
     queue_flush, queue_speed, queue_peek, queue_fill, queue_prepare, queue_status
 
+
 def get_processing_queue():
     return AzureStorageQueue(PANORAMA_PROCESSING_QUEUE)
+
 
 def main():
     workers = []
