@@ -1,1 +1,3 @@
-panorama_image_processor
+htmlcov/
+**/__pycache__
+panorama_image_processor.egg-info
