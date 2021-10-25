@@ -29,4 +29,3 @@ def test_transformation(tmpdir):
     projections = cubic_transformer.get_normalized_projection()
     cubic_path = Path(tmpdir.mkdir('cubic'))
     cubic_transformer.save_as_cubic_file_set(projections, cubic_path)
-    print(cubic_path)

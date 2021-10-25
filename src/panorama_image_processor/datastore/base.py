@@ -22,7 +22,3 @@ class Datastore(ABC):
     @abstractmethod
     def disconnect(self):
         pass  # pragma: no cover
-
-    @abstractmethod
-    def listdir(self, path: str):
-        pass  # pragma: no cover

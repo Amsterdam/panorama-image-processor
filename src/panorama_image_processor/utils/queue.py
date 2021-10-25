@@ -180,17 +180,15 @@ def queue_flush(storage_queue: AzureStorageQueue):
 
 class MissionCollector():
 
-    def __init__(self, object_store: Datastore, base_path: str, missie_files, file_sizes):
+    def __init__(self, object_store: Datastore, base_path: str, missie_files):
         self.object_store = object_store
         self.base_path = base_path
         self.missie_files = missie_files
-        self.file_sizes = file_sizes
 
     def __iter__(self):
         self.mission_missing = defaultdict(list)
         self.mission_queued = defaultdict(int)
         self.mission_pictures = defaultdict(int)
-        self.mission_zero = defaultdict(list)
         for missie_path, files in self.missie_files.items():
             files_ext_map = {path.splitext(f)[0]: f for f in files}
             full_path = '/'.join((self.base_path, missie_path)) + '/'
@@ -204,8 +202,6 @@ class MissionCollector():
                     self.mission_missing[missie_path].append(
                         filename_without_ext)
                     continue
-                if self.file_sizes['/'.join((missie_path, filename_ext))] == 0:
-                    self.mission_zero[missie_path].append(filename_ext)
                 yield {
                     'source': 'azure_panorama',
                     'destination': 'azure_panorama',
@@ -220,15 +216,13 @@ class MissionCollector():
                 len([f for f in files if f.endswith('.jpg')])
 
     def print_report(self):
-        headers = ["Mission", "Queued", "Pictures", "Missing", "ZeroSize"]
+        headers = ["Mission", "Queued", "Pictures", "Missing"]
         table = [
          (
                 '/'.join((self.base_path, m)),
                 self.mission_queued[m],
                 self.mission_pictures[m],
-                len(self.mission_missing[m]),
-                '-' if len(self.mission_zero[m]) == 0
-                else ','.join([i for i in self.mission_zero[m]])
+                len(self.mission_missing[m])
          ) for m in self.mission_pictures.keys()]
         print(tabulate(table, headers=headers))
         report_missing = [
@@ -252,9 +246,8 @@ def queue_prepare(base_path: str, limit: int, out_file):  # noqa: C901
     print(f'Processing container={base_path}')
     source_datastore_config = get_datastore_config(source)
     object_store = DatastoreFactory.get_datastore(source_datastore_config)
-    print('Collecting files to process, be patience...')
+    print('Collecting files to process, be patient...')
     all_files = defaultdict(list)
-    all_file_sizes = dict()
     try:
         for idx, (name, size) in enumerate(object_store.listfiles(
                 base_path, extra_fields=['size'], recursive=True)):
@@ -264,7 +257,6 @@ def queue_prepare(base_path: str, limit: int, out_file):  # noqa: C901
                 print('ValueError')
                 continue
             all_files[path].append(fname)
-            all_file_sizes['/'.join((path, fname))] = size
             if idx == limit:
                 break
     except FileNotFoundError:
@@ -274,8 +266,7 @@ def queue_prepare(base_path: str, limit: int, out_file):  # noqa: C901
         (key, value) for key, value in all_files.items()
         if PANORAMA_FILE in [v for v in value])
     print('Creating output file')
-    mission_collector = MissionCollector(
-        object_store, base_path, missie_files, all_file_sizes)
+    mission_collector = MissionCollector(object_store, base_path, missie_files)
     for msg in mission_collector:
         print(json.dumps(msg), file=out_file)
     mission_collector.print_report()
