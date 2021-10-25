@@ -2,10 +2,11 @@ import os
 import shutil
 from enum import Enum
 from pathlib import Path
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 from panorama_image_processor.config import get_datastore_config, PANORAMA_RAW_PATH, PANORAMA_INTERMEDIATE_PATH, \
-                                            PANORAMA_PROCESSED_PATH, PANORAMA_PROCESSED_CONTAINER
+                                            PANORAMA_PROCESSED_PATH, PANORAMA_PROCESSED_CONTAINER, \
+                                            PANORAMA_UNPROCESSED_CONTAINER
 from panorama_image_processor.datastore.factory import DatastoreFactory
 from panorama_image_processor.tasks.blur import BlurPanoramaTask
 from panorama_image_processor.tasks.detection import DetectionTask
@@ -60,6 +61,7 @@ class PanoramaJob(object):
             PanoramaStatus.BLURRED: self._package_projections,
             PanoramaStatus.PACKAGED: self._distribute,
             PanoramaStatus.DISTRIBUTED: self._cleanup,
+            PanoramaStatus.FAILED: self._report_failed,
             PanoramaStatus.CLEANEDUP: self._finish_job,
         }
 
@@ -104,13 +106,23 @@ class PanoramaJob(object):
 
     def _transform_equirectangular(self):
         print("Transform raw panorama to equirectangular")
-        equirectangular_transformer = EquirectangularTransformer(
-            self.raw_filename, self.heading, self.pitch, self.roll)
+        try:
+            equirectangular_transformer = EquirectangularTransformer(
+                self.raw_filename, self.heading, self.pitch, self.roll)
+        except UnidentifiedImageError:
+            self.status = PanoramaStatus.FAILED
+            return
         projected_panorama = equirectangular_transformer.get_projection()
         # Make sure the directory exists
         Path(self.intermediate_filename).parent.mkdir(parents=True, exist_ok=True)
         projected_panorama.save(self.intermediate_filename)
         self.status = PanoramaStatus.TRANSFORMED
+
+    def _report_failed(self):
+        print('Transform raw panorama file failed')
+        self._destination_datastore.upload(PANORAMA_UNPROCESSED_CONTAINER, self.processed_path,
+                                           destination=self.panorama_path, source_base=PANORAMA_PROCESSED_PATH)
+        self.status = PanoramaStatus.CLEANEDUP
 
     def _detect_regions(self):
         print("Detect regions for faces and license plates")
