@@ -10,6 +10,7 @@ from queue import Queue
 from os import path
 from pathlib import Path
 from collections import defaultdict
+from typing import Dict
 
 from tabulate import tabulate
 from azure.storage.queue.aio import QueueClient
@@ -180,18 +181,18 @@ def queue_flush(storage_queue: AzureStorageQueue):
 
 class MissionCollector():
 
-    def __init__(self, object_store: Datastore, base_path: str, missie_files):
+    def __init__(self, object_store: Datastore, base_path: str, mission_files: Dict[str, list[str]]):
         self.object_store = object_store
         self.base_path = base_path
-        self.missie_files = missie_files
+        self.mission_files = mission_files
 
     def __iter__(self):
         self.mission_missing = defaultdict(list)
         self.mission_queued = defaultdict(int)
         self.mission_pictures = defaultdict(int)
-        for missie_path, files in self.missie_files.items():
+        for mission_path, files in self.mission_files.items():
             files_ext_map = {path.splitext(f)[0]: f for f in files}
-            full_path = '/'.join((self.base_path, missie_path)) + '/'
+            full_path = '/'.join((self.base_path, mission_path)) + '/'
             pano_csv = self.object_store.get_blob(full_path=full_path, filename=PANORAMA_FILE)
             pano_csv_reader = csv.DictReader(
                 io.StringIO(pano_csv.decode('utf-8')), delimiter='\t')
@@ -199,20 +200,20 @@ class MissionCollector():
                 filename_without_ext = row['panorama_file_name']
                 filename_ext = files_ext_map.get(filename_without_ext)
                 if filename_ext is None:
-                    self.mission_missing[missie_path].append(
+                    self.mission_missing[mission_path].append(
                         filename_without_ext)
                     continue
                 yield {
                     'source': 'azure_panorama',
                     'destination': 'azure_panorama',
-                    'path': '/'.join((self.base_path, missie_path)) + '/',
+                    'path': '/'.join((self.base_path, mission_path)) + '/',
                     'filename': filename_ext,
                     'heading': float(row['heading[deg]']),
                     'roll': float(row['roll[deg]']),
                     'pitch': float(row['pitch[deg]'])
                 }
-                self.mission_queued[missie_path] += 1
-            self.mission_pictures[missie_path] = \
+                self.mission_queued[mission_path] += 1
+            self.mission_pictures[mission_path] = \
                 len([f for f in files if f.endswith('.jpg')])
 
     def print_report(self):
