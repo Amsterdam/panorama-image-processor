@@ -24,7 +24,6 @@ class PanoramaWorker(Thread):
                 message, job_info = self.queue.dequeue()
                 print("Job processed")
             except EmptyQueueException:
-                print("Empty queueu exception")
                 time.sleep(60)
                 continue
 
