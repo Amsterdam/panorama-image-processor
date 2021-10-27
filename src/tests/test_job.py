@@ -91,7 +91,7 @@ def test_panormam_job(
 @pytest.mark.parametrize('data_bytes', [b'', b'\x00' * 1024])  # 2 encountered errors, zero size and zero filled.
 @patch('panorama_image_processor.job.DatastoreFactory')
 @patch('panorama_image_processor.job.get_datastore_config')
-def test_panormam_job_zero_size(get_datastore_config, DatastoreFactory, tmpdir, data_bytes):
+def test_panorama_job_zero_size(get_datastore_config, DatastoreFactory, tmpdir, data_bytes):
     cfg =  'src', 'dst'
     ret_cfg = 'src_ds', 'dst_ds'
     get_datastore_config.side_effect = ret_cfg
