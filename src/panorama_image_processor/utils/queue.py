@@ -39,6 +39,7 @@ using the basename of the filename.
 
 PANORAMA_FILE = 'panorama1.csv'
 PROCESSED_QUEUE_NAME = 'processed'
+MESSAGE_TTL = -1
 
 
 def _get_appr_count(storage_queue: AzureStorageQueue):
@@ -276,7 +277,7 @@ def queue_prepare(base_path: str, limit: int, out_file):  # noqa: C901
 async def _send_message(msg: str, res_queue: asyncio.Queue, dry_run: bool, queue_client: QueueClient):
     try:
         if not dry_run:
-            await queue_client.send_message(msg, timeout=10)
+            await queue_client.send_message(msg, timeout=10, time_to_live=MESSAGE_TTL)
         res_queue.put(msg)
     except Exception:
         print('Error filling')
