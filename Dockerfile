@@ -1,9 +1,21 @@
-FROM amsterdam/python:3.9-buster-minimal
+FROM ubuntu:18.04
+# FROM amsterdam/python:3.9-buster-minimal
 MAINTAINER datapunt@amsterdam.nl
 
 WORKDIR /opt/build
 
 ENV OPENCV_VERSION="4.5.1"
+
+RUN apt-get -qq update
+RUN apt-get install software-properties-common curl -y
+# Use python3.9 on ubuntu 18.04
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update
+RUN apt-get install python3.9 python3.9-distutils -y
+RUN ln -s /usr/bin/python3.9 /usr/bin/python
+# Install pip
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+RUN python3.9 get-pip.py
 
 RUN apt-get -qq update \
     && apt-get -qq install -y --no-install-recommends \
@@ -54,12 +66,20 @@ RUN apt-get -qq update \
     && apt-get -qq autoremove \
     && apt-get -qq clean
 
+ENV UBUNTU_VERSION=1804
+ENV CUDA_REPO_PKG=cuda-repo-ubuntu${UBUNTU_VERSION}_10.0.130-1_amd64.deb
+
 # Add cuda support as stated in https://docs.microsoft.com/en-us/azure/virtual-machines/linux/n-series-driver-setup
-RUN CUDA_REPO_PKG=cuda-repo-ubuntu1604_10.0.130-1_amd64.deb \
-    && wget -O /tmp/${CUDA_REPO_PKG} https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/${CUDA_REPO_PKG} \
-    && dpkg -i /tmp/${CUDA_REPO_PKG} \
-    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub \
-    && rm -f /tmp/${CUDA_REPO_PKG}
+RUN wget -O /tmp/${CUDA_REPO_PKG} https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION}/x86_64/${CUDA_REPO_PKG}
+RUN dpkg -i /tmp/${CUDA_REPO_PKG}
+
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION}/x86_64/7fa2af80.pub \
+   && rm -f /tmp/${CUDA_REPO_PKG}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update
+RUN apt-get install cuda-drivers -y
 
 RUN adduser --system datapunt
 
